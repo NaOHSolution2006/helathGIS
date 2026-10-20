@@ -1,0 +1,44 @@
+library(summarytools)
+inlibrary(tidyverse)
+library(classInt)
+library(readxl)
+library(janitor)
+library(sf)
+library(SpatialEpi)
+library(spdep)
+library(scales)
+
+EMSraw <- read_excel("~/week3/deathsregisteredsummary2024.xlsx", sheet = "2", skip = 5)
+EMSannual <- read_excel("~/week3/annualdeaths2024.xlsx", sheet = "Table_2", skip = 4)
+EMSpopraw <- read_excel("~/week3/mye24tablesuk.xlsx", sheet = "MYE4", skip = 7)
+la <- st_read(dsn = "~/week3/Local_Authority_Districts_December_2023_Boundaries_UK_BSC_3512198736055803140.geojson", quiet = TRUE)
+
+head(EMSraw)
+head(EMSpopraw)
+plot(la["LAD23CD"])
+
+la_ewdake <- la %>%
+  filter(str_starts(LAD23CD, "E") |
+           str_starts(LAD23CD, "W"))
+
+EMS <- EMSraw %>%
+  clean_names()
+names(EMS)
+
+EMS <- EMSraw %>%
+  rename_with(~ paste0("deaths_", sub("^x", "", .x)),
+              starts_with("x"))
+EMS <- EMS %>% 
+  filter(str_starts(area_code, "E0") | str_starts(area_code, "W0")) %>%
+  mutate(area_code = if_else(area_code == "E06000052, E06000053", "E06000052", area_code))  
+EMSpop <- EMSraw %>% 
+  clean_names() %>% 
+  filter(str_starts(code, "E0") |
+           str_starts(code, "W0")) %>% 
+  select(code, mid_2024)
+
+pop <- pop_raw %>%
+  clean_names() |>
+  filter(str_starts(code, "E0") |
+           str_starts(code, "W0")) |>
+  select(code, mid_2024)
